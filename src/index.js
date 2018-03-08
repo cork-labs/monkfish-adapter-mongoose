@@ -2,16 +2,21 @@ const mongoose = require('mongoose');
 
 const mixinEmitter = require('@cork-labs/mixin-emitter');
 
-class Mongo {
+const defaults = {
+  reconnectTries: 3
+};
+
+class MongooseAdapter {
   constructor (logger, config) {
     this._logger = logger;
-    this._config = Object.assign({}, config);
+    this._config = Object.assign({}, defaults, config);
     this._connectionOptions = Object.assign({
       keepAlive: true,
-      reconnectTries: Number.MAX_VALUE
+      reconnectTries: this._config.reconnectTries
     }, config.options);
 
     this._emitter = mixinEmitter(this);
+
     mongoose.Promise = Promise;
     this._connection = mongoose.createConnection(this._config.uri, this._connectionOptions);
   }
@@ -42,4 +47,4 @@ class Mongo {
   }
 }
 
-module.exports = Mongo;
+module.exports = MongooseAdapter;

@@ -6,11 +6,11 @@ const sinon = require('sinon');
 const sinonChai = require('sinon-chai');
 chai.use(sinonChai);
 
-const Mongo = require('../src/index');
+const MongooseAdapter = require('../src/index');
 
-describe('Mongo', function () {
+describe('MongooseAdapter', function () {
   it('should be a function', function () {
-    expect(Mongo).to.be.a('function');
+    expect(MongooseAdapter).to.be.a('function');
   });
 
   describe('api', function () {
