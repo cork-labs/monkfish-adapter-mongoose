@@ -1,6 +1,6 @@
 {
   "name": "@cork-labs/monkfish-adapter-mongoose",
-  "version": "0.1.0",
+  "version": "0.1.1-pre",
   "description": "Mongoose adapter for Node.js framework Monkfish",
   "license": "MIT",
   "homepage": "https://github.com/cork-labs/monkfish-adapter-mongoose",
