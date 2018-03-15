@@ -47,10 +47,12 @@ Check [CONTRIBUTING](https://github.com/cork-labs/contributing/blob/master/CONTR
 
 ## Links
 
+- [mongoose](http://mongoosejs.com/)
 - [npm-bump](https://www.npmjs.com/package/npm-bump)
 - [chai](http://chaijs.com/api/)
 - [sinon](http://sinonjs.org/)
 - [sinon-chai](https://github.com/domenic/sinon-chai)
+- [mockgoose](https://github.com/Mockgoose/Mockgoose)
 
 
 ## [MIT License](LICENSE)

@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "@cork-labs/mixin-emitter": "^0.1.0",
-    "mongoose": "^5.0.8"
+    "mongoose": "^5.0.8",
+    "mockgoose": "^7.3.5"
   },
   "devDependencies": {
     "chai": "^4.1.2",
