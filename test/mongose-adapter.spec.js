@@ -6,7 +6,7 @@ const sinon = require('sinon');
 const sinonChai = require('sinon-chai');
 chai.use(sinonChai);
 
-const MongooseAdapter = require('../src/mogoose-adapter');
+const MongooseAdapter = require('../src/mongoose-adapter');
 
 describe('MongooseAdapter', function () {
   it('should be a function', function () {
