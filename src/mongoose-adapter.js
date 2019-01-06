@@ -23,16 +23,14 @@ class MongooseAdapter {
   }
 
   connect () {
-    mongoose.connection.on('connected', () => {
+    this._connection.on('connected', () => {
       this._logger.info('MongooseAdapter::connect() connected');
     });
 
-    mongoose.connection.on('disconnected', () => {
+    this._connection.on('disconnected', () => {
       this._logger.warn('MongooseAdapter::connect() disconnected');
       this._emitter.emit('disconnected');
     });
-
-    return Promise.resolve();
   }
 
   disconnect () {

@@ -33,11 +33,14 @@ describe('MongooseAdapter', function () {
     });
   });
 
-  describe('given a connection', function () {
+  describe('given a connection and a model', function () {
     before(async function () {
       this.subject = new MongooseAdapter(logger, {uri: 'mongodb://localhost/mongoose-adapter-test'});
       await this.subject.connect();
       this._conn = this.subject.connection();
+      const mongoose = this.subject.connection();
+      this._model = mongoose.model('aaa', new mongoose.base.Schema({foo: 'string'}));
+      await this._model.deleteMany({});
     });
 
     after(async function () {
@@ -45,25 +48,17 @@ describe('MongooseAdapter', function () {
     });
 
     describe('mongoose insert and read', function () {
-      before(async function () {
-        await this._conn.collection('aaa').deleteMany({});
-      });
-
       it('should insert', async function () {
-        await this._conn.collection('aaa').insertOne({foo: 'bar'});
-        await this._conn.collection('aaa').insertOne({bar: 'baz'});
-        await this._conn.collection('aaa').updateOne({foo: 'bar'}, {$set: {foo: 'baz'}});
-      });
-
-      it('... waiting 100 ms', async function () {
-        return new Promise((resolve) => setTimeout(resolve, 100));
+        await this._model.create({foo: 'bar'});
+        await this._model.updateOne({foo: 'bar'}, {$set: {foo: 'baz'}});
+        await this._model.deleteOne({foo: 'baz'});
+        await this._model.create({foo: 'qux'});
       });
 
       it('should find', async function () {
-        await this._conn.collection('aaa').removeOne({foo: 'baz'});
-        const result = await this._conn.collection('aaa').findOne({bar: 'baz'});
+        const result = await this._model.findOne({foo: 'qux'});
         expect(result._id).to.match(/^[a-z0-9]{24}$/);
-        expect(result.bar).to.equal('baz');
+        expect(result.foo).to.equal('qux');
       });
     });
   });
