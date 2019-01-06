@@ -1,35 +1,56 @@
 'use strict';
 
-const mongoose = require('mongoose');
-const Mockgoose = require('mockgoose').Mockgoose;
-const mockgoose = new Mockgoose(mongoose);
+const MemoryServer = require('mongodb-memory-server').MongoMemoryServer;
+const MongooseAdapter = require('./mongoose-adapter');
+
+const noop = () => {};
 
 class MongooseAdapterMock {
-  constructor (config) {
+  constructor (logger, config = {}) {
     this._config = config;
   }
 
   connect () {
-    return mockgoose.prepareStorage()
-      .then(() => {
-        this._connection = mongoose.createConnection(this._config.uri);
+    this._server = new MemoryServer();
+
+    return this._server.getConnectionString().then((mongoUri) => {
+      const logger = {
+        info: noop,
+        warn: noop
+      };
+      const config = Object.assign(this._config, {
+        uri: mongoUri
       });
+      this._adapter = new MongooseAdapter(logger, config);
+      return this._adapter.connect();
+    });
   }
 
   disconnect () {
-    return mockgoose.helper.reset()
-      .then(() => mongoose.disconnect())
-      .then(() => {
-        mockgoose.mongodHelper.mongoBin.childProcess.kill('SIGTERM'); // https://github.com/Mockgoose/Mockgoose/issues/71
-      });
+    if (this._server) {
+      this._server.stop();
+    }
+    if (this._adapter) {
+      return this._adapter.disconnect();
+    } else {
+      return Promise.resolve();
+    }
   }
 
   seed (model, data) {
-    return model.remove().then(() => model.create(data));
+    return model.deleteMany({}).then(() => model.create(data));
   }
 
   connection () {
-    return this._connection;
+    if (this._adapter) {
+      return this._adapter.connection();
+    } else {
+      return Promise.resolve();
+    }
+  }
+
+  destroy () {
+    this._adapter.destroy();
   }
 }
 

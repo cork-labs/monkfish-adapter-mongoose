@@ -12,7 +12,8 @@ class MongooseAdapter {
     this._config = Object.assign({}, defaults, config);
     this._connectionOptions = Object.assign({
       keepAlive: true,
-      reconnectTries: this._config.reconnectTries
+      reconnectTries: this._config.reconnectTries,
+      useNewUrlParser: true
     }, config.options);
 
     this._emitter = mixinEmitter(this);
@@ -36,7 +37,7 @@ class MongooseAdapter {
 
   disconnect () {
     return new Promise((resolve, reject) => {
-      this._connection.close(() => {
+      this._connection.close(true, () => {
         this._connection = null;
         this._emitter.emit('disconnected');
         resolve();
@@ -46,6 +47,10 @@ class MongooseAdapter {
 
   connection () {
     return this._connection;
+  }
+
+  destroy () {
+    this._emitter.removeAllListeners();
   }
 }
 
