@@ -2,8 +2,10 @@
 
 const chai = require('chai');
 const expect = chai.expect;
-const sinon = require('sinon');
 const sinonChai = require('sinon-chai');
+const chaiAsPromised = require('chai-as-promised');
+
+chai.use(chaiAsPromised);
 chai.use(sinonChai);
 
 const MongooseAdapter = require('../src/mongoose-adapter');
@@ -20,45 +22,144 @@ describe('MongooseAdapter', function () {
   });
 
   describe('connect()', function () {
-    before(function () {
+    beforeEach(function () {
       this.subject = new MongooseAdapter(logger, {uri: 'mongodb://localhost/mongoose-adapter-test'});
+      this.promise = this.subject.connect();
     });
 
-    after(async function () {
+    afterEach(async function () {
       await this.subject.disconnect();
     });
 
     it('should connect', async function () {
-      await this.subject.connect();
+      return expect(this.promise).to.be.fulfilled;
     });
   });
 
-  describe('given a connection and a model', function () {
-    before(async function () {
-      this.subject = new MongooseAdapter(logger, {uri: 'mongodb://localhost/mongoose-adapter-test'});
+  describe('given a connection', function () {
+    beforeEach(async function () {
+      this.collectionName = 'foo';
+      this.subject = new MongooseAdapter(logger, {uri: 'mongodb://localhost/mongo-adapter-test'});
       await this.subject.connect();
       this._conn = this.subject.connection();
-      const mongoose = this.subject.connection();
-      this._model = mongoose.model('aaa', new mongoose.base.Schema({foo: 'string'}));
-      await this._model.deleteMany({});
+      await this._conn.collection(this.collectionName).deleteMany({});
     });
 
-    after(async function () {
+    afterEach(async function () {
       await this.subject.disconnect();
     });
 
-    describe('mongoose insert and read', function () {
-      it('should insert', async function () {
-        await this._model.create({foo: 'bar'});
-        await this._model.updateOne({foo: 'bar'}, {$set: {foo: 'baz'}});
-        await this._model.deleteOne({foo: 'baz'});
-        await this._model.create({foo: 'qux'});
+    describe('connection()', function () {
+      it('should expose the underlying connection object', async function () {
+        const connection = this.subject.connection();
+        expect(connection.constructor.name).to.equal('NativeConnection');
+      });
+    });
+
+    describe('collection()', function () {
+      it('should expose the underlying collection object', async function () {
+        const collection = this.subject.collection(this.collectionName);
+        expect(collection.constructor.name).to.equal('NativeCollection');
+        expect(collection.collectionName).to.equal('foo');
+      });
+    });
+
+    describe('mongo collection basic commands', function () {
+      beforeEach(function () {
+        this.collection = this.subject.collection(this.collectionName);
       });
 
-      it('should find', async function () {
-        const result = await this._model.findOne({foo: 'qux'});
-        expect(result._id).to.match(/^[a-z0-9]{24}$/);
-        expect(result.foo).to.equal('qux');
+      describe('insertOne()', function () {
+        beforeEach(function () {
+          this.promise = this.collection.insertOne({foo: 'bar'});
+        });
+
+        it('should resolve', async function () {
+          return expect(this.promise).to.be.fulfilled;
+        });
+
+        it('should resolve with a result object', async function () {
+          const result = await this.promise;
+          expect(result).to.be.an('object');
+          expect(result.insertedCount).to.equal(1);
+          expect(result.insertedId).to.match(/^[a-z0-9]{24}$/);
+        });
+      });
+
+      describe('updateOne()', function () {
+        beforeEach(async function () {
+          await this.collection.insertOne({foo: 'bar'});
+          this.promise = this.collection.updateOne({foo: 'bar'}, { $set: {foo: 'baz'} });
+        });
+
+        it('should resolve', async function () {
+          return expect(this.promise).to.be.fulfilled;
+        });
+
+        it('should resolve with a result object', async function () {
+          const result = await this.promise;
+          expect(result).to.be.an('object');
+          expect(result.matchedCount).to.equal(1);
+          expect(result.modifiedCount).to.equal(1);
+        });
+      });
+
+      describe('deleteOne()', function () {
+        beforeEach(async function () {
+          await this.collection.insertOne({foo: 'qux'});
+          this.promise = this.collection.deleteOne({foo: 'qux'});
+        });
+
+        it('should resolve', async function () {
+          return expect(this.promise).to.be.fulfilled;
+        });
+
+        it('should resolve with a result object', async function () {
+          const result = await this.promise;
+          expect(result).to.be.an('object');
+          expect(result.deletedCount).to.equal(1);
+        });
+      });
+
+      describe('findOne()', function () {
+        beforeEach(async function () {
+          await this.collection.insertOne({foo: 'bar'});
+          this.promise = this.collection.findOne({foo: 'bar'});
+        });
+
+        it('should resolve', async function () {
+          return expect(this.promise).to.be.fulfilled;
+        });
+
+        it('should resolve with the document', async function () {
+          const result = await this.promise;
+          expect(result).to.be.an('object');
+          expect(result._id).to.match(/^[a-z0-9]{24}$/);
+          expect(result.foo).to.equal('bar');
+        });
+      });
+
+      describe('find()', async function () {
+        beforeEach(async function () {
+          this.collection = this.subject.collection(this.collectionName);
+          await this.collection.insertOne({foo: 'bar'});
+          await this.collection.insertOne({foo: 'baz'});
+          this.promise = this.collection.find({}).toArray();
+        });
+
+        it('should resolve', async function () {
+          return expect(this.promise).to.be.fulfilled;
+        });
+
+        it('should resolve with all documents', async function () {
+          const results = await this.promise;
+          expect(results).to.be.an('array');
+          expect(results.length).to.equal(2);
+          expect(results[0]._id).to.match(/^[a-z0-9]{24}$/);
+          expect(results[0].foo).to.equal('bar');
+          expect(results[1]._id).to.match(/^[a-z0-9]{24}$/);
+          expect(results[1].foo).to.equal('baz');
+        });
       });
     });
   });
