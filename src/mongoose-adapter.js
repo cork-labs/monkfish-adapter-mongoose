@@ -18,6 +18,7 @@ class MongooseAdapter {
 
     this._emitter = mixinEmitter(this);
 
+    mongoose.set('bufferCommands', false);
     mongoose.Promise = Promise;
     this._connection = mongoose.createConnection(this._config.uri, this._connectionOptions);
   }
@@ -31,13 +32,15 @@ class MongooseAdapter {
       this._logger.warn('MongooseAdapter::connect() disconnected');
       this._emitter.emit('disconnected');
     });
+
+    return this._connection.startSession();
   }
 
   disconnect () {
     return new Promise((resolve, reject) => {
       this._connection.close(true, () => {
-        this._connection = null;
-        this._emitter.emit('disconnected');
+        delete this._connection;
+        this._emitter.emit('closed');
         resolve();
       });
     });
@@ -45,6 +48,10 @@ class MongooseAdapter {
 
   connection () {
     return this._connection;
+  }
+
+  collection (name) {
+    return this._connection.collection(name);
   }
 
   destroy () {

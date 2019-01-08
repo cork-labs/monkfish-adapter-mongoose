@@ -37,16 +37,16 @@ class MongooseAdapterMock {
     }
   }
 
-  seed (model, data) {
-    return model.deleteMany({}).then(() => model.create(data));
-  }
-
   connection () {
     if (this._adapter) {
       return this._adapter.connection();
     } else {
       return Promise.resolve();
     }
+  }
+
+  collection (name) {
+    return this._adapter.collection(name);
   }
 
   destroy () {
