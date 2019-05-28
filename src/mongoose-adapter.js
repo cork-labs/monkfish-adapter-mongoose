@@ -26,12 +26,12 @@ class MongooseAdapter {
   connect () {
     this._connection.on('connected', () => {
       this._emitter.emit('connected');
-      this._logger.info('MongooseAdapter::connect() connected');
+      this._logger.warn('monkfish.adapter.mongoose.connected');
     });
 
     this._connection.on('disconnected', () => {
       this._emitter.emit('disconnected');
-      this._logger.warn('MongooseAdapter::connect() disconnected');
+      this._logger.warn('monkfish.adapter.mongo.disconnected');
     });
 
     return this._connection.startSession();
